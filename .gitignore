@@ -4,5 +4,7 @@
 node_modules/
 # 忽略 .venv 文件夹
 .venv/
-
 index-注释版.html
+node_modules
+dist
+
