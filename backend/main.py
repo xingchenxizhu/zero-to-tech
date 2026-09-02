@@ -1,68 +1,26 @@
-# from fastapi import FastAPI
-#
-# app = FastAPI()
-#
-# profile = {
-#     "heroTitle": "关于我",
-#     "heroSubtitle": "项目，创意，灵感，心得，我的作品",
-# }
-#
-# @app.get("/api/profile")
-# def get_profile():
-#     return profile
-
-
-from fastapi.middleware.cors import CORSMiddleware
-
+# backend/main.py
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
-
 from pypinyin import lazy_pinyin, Style
 from snownlp import SnowNLP
-
-import json
 from datetime import datetime, timezone
 
 
-
-HISTORY_FILE = "history.json"
-
-def load_history():
-    try:
-        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-
-def save_record(record):
-    records = load_history()
-    records.append(record)
-    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(records, f, ensure_ascii=False, indent=2)
+from storage import init_db, save_record, get_history   # ← 这一行：import 里多个 init_db
 
 
-
-
-
+init_db()
 
 app = FastAPI()
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["http://localhost:3000"],
-# )
 
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
     allow_methods=["GET", "POST"],
-    allow_headers=["*"],
 )
-
-
-
 
 profile = {
     "heroTitle": "关于我",
@@ -76,21 +34,11 @@ profile = {
     "identity": {
         "motto": "已识乾坤大，尤怜草木青",
         "learning": "零到全栈",
-    }
+    },
 }
 
 class AnalyzeRequest(BaseModel):
     text: str
-
-@app.get("/api/profile")
-def get_profile():
-    return profile
-
-
-
-
-
-
 
 def score_label(score):
     if score >= 0.6:
@@ -100,10 +48,9 @@ def score_label(score):
     else:
         return "中性"
 
-
-
-
-
+@app.get("/api/profile")
+def get_profile():
+    return profile
 
 @app.post("/api/analyze")
 def analyze(req: AnalyzeRequest):
@@ -114,17 +61,16 @@ def analyze(req: AnalyzeRequest):
         "score": score,
         "label": score_label(score),
         "pinyin": " ".join(lazy_pinyin(text, style=Style.TONE)),
-        "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),  # ← 新增
+        "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
-    save_record(result)                                                          # ← 存档到文件
+    save_record(result)
     return result
 
-
-
+# @app.get("/api/history")
+# def history():
+#     return get_history()
 
 
 @app.get("/api/history")
 def history():
-    records = load_history()
-    records.reverse()          # 倒过来：新的排前面
-    return records[:10]        # 切一刀：只留最近 10 条
+    return get_history(10)
