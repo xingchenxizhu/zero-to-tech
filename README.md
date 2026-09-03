@@ -1,129 +1,195 @@
-# zero-to-tech · Next.js 版（模块 4.5 终点 + 5.5 前端联调）
+<div align="center">
 
-《零到全栈》课程主线项目的当前形态，一句话介绍：
+# Zero to Tech · 零到全栈
 
-> **双页面个人站点在 Next.js 框架下的样子**（个人主页 + 文字实验室），并且已经接上了模块 5 搭的后端 API——前端一半已完成前后端联调，后端一半在 `backend/`（FastAPI，模块 5 一路搭的）。
+**从零开始的全栈练习项目** — 个人主页 + 「文字实验室」，前端 Next.js，后端 FastAPI，随手贴一段中文，立即得到拼音与情感分析。
 
-它同时承担两个课程阶段的角色：
+<!-- 徽章区 -->
+![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)
 
-- **模块 4.5 终点成品**：把 4.4 的 React 项目（Vite + 手搓 `useRoute`）整体搬到 Next.js App Router。网站长相不变；变的是路由层（`app/` 文件夹即路由）和入口（没有 `index.html` / `main.jsx` / `App.jsx` 了）。
-- **已包含 5.5 的前端替换文件**：四个组件（`HomeView` / `TextLabView` / `InputCard` / `ResultCard`）都已从「写死数据」改成「去调后端 API」，并配好了 `.env.local`。
+*「已识乾坤大，尤怜草木青」*
 
-## 技术栈
+</div>
 
-| 依赖 | 版本 | 用途 |
-| --- | --- | --- |
-| `next` | ^15.0.0 | App Router 框架（文件夹=路由、预渲染） |
-| `react` / `react-dom` | ^19.2.6 | UI 库 |
-| `animejs` | ^4.4.1 | 卡片入场 / 分数滚动动画 |
-| 语言 | 纯 `.jsx`（无 TypeScript） | — |
+---
 
-## 快速开始
+## 📖 项目简介
+
+这是「零到全栈」系列课程第 4–5 模块的项目作品，用一条完整的「前端 → 后端 → 数据库」链路演示全栈开发：
+
+- **个人主页（`/`）**：展示座右铭、正在学习的内容与代表作；页面数据在后端 `/api/profile`，前端打开时动态拉取。
+- **文字实验室（`/text-lab`）**：粘贴一段中文，后端用 SnowNLP 计算情感倾向（分数 + 偏积极/中性/偏消极），用 pypinyin 标注拼音，并把每次分析写入 SQLite，可回溯历史。
+
+项目刻意保持「小而完整」——单页路由、状态提升、前后端分离、CORS、环境变量、SQLite 持久化，是理解真实 Web 应用的理想骨架。
+
+---
+
+## ✨ 功能特性
+
+| 特性 | 说明 |
+| --- | --- |
+| 🏠 个人主页 | 动态数据驱动（前端 `data/site.js` 打底 + 后端 `/api/profile` 覆盖） |
+| 🔤 拼音标注 | 基于 pypinyin，带声调输出（`jīn tiān de fēng hěn qīng`） |
+| 😊 情感分析 | 基于 SnowNLP，输出 0–1 情感分数与三档判断 |
+| 🗄️ 历史记录 | 每次分析自动入库 SQLite，`/api/history` 返回最近 10 条 |
+| 🎬 卡片动画 | anime.js 卡片飞入 + 分数滚动特效 |
+| 📱 响应式 | 纯 CSS 实现移动端适配 |
+
+---
+
+## 🛠️ 技术栈
+
+**前端**
+- [Next.js 15](https://nextjs.org/)（App Router，`output: "export"` 纯静态导出）
+- [React 19](https://react.dev/)
+- [anime.js 4](https://animejs.com/) — 卡片入场与分数动画
+- 原生 CSS（reset / variables / layout / hero / nav / cards / lab / responsive）
+
+**后端**
+- [FastAPI](https://fastapi.tiangolo.com/) + [uvicorn](https://www.uvicorn.org/)
+- [pypinyin](https://pypi.org/project/pypinyin/) — 中文转拼音
+- [SnowNLP](https://pypi.org/project/snownlp/) — 中文情感分析
+- SQLite（`sqlite3` 标准库，无 ORM）
+
+---
+
+## 🚀 快速开始
+
+### 环境要求
+
+| 依赖 | 版本 |
+| --- | --- |
+| Node.js | ≥ 18（Next.js 15 要求） |
+| Python | ≥ 3.10 |
+
+### 1. 启动后端（端口 8000）
 
 ```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+启动后 API 文档可访问 <http://127.0.0.1:8000/docs>。
+
+### 2. 启动前端（端口 3000）
+
+新开一个终端：
+
+```bash
+# 回到项目根目录
 npm install
-npm run dev        # http://localhost:3000（Next 默认端口）
+npm run dev
 ```
 
-打开两个页面：
+打开 <http://localhost:3000> 即可。
 
-- `/` — 个人主页（座右铭、正在学习、作品入口）
-- `/text-lab` — 文字实验室（贴一段中文 → 分析拼音与情感）
+> 前端通过 `NEXT_PUBLIC_API_BASE_URL`（见 `.env.local`）连接后端，默认 `http://localhost:8000`；启动后端前需在根目录创建该文件：
+>
+> ```bash
+> echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:8000" > .env.local
+> ```
 
-### 生产构建（静态导出）
-
-`next.config.mjs` 里开了 `output: "export"`——构建产物是**纯静态 HTML**，不需要常驻 Node 服务器：
+### 3. 生产构建（静态导出）
 
 ```bash
-npm run build      # 产物输出到 out/
-npx serve out      # 任意静态服务器预览都行
+npm run build
 ```
 
-> 注意：静态导出模式下 `next start` 不可用（没有服务器可起），用上面的方式预览。
-> 两个 API 请求都发生在**浏览器端**（组件全部是客户端组件），所以静态托管后后端照常生效。
+产物输出到 `out/`（Next.js 静态导出模式，可直接丢到任意静态托管）。
 
-## 连接后端（模块 5 线）
+---
 
-- **地址配置**：`.env.local` 里写 `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`。
-  - `NEXT_PUBLIC_` 前缀的意思：这个变量会被打进浏览器代码，改地址**只动这一个文件**，组件代码一个字不用碰。
-- **接口约定**（前端按这两个接口写的）：
-
-| 接口 | 方法 | 请求 | 返回 |
-| --- | --- | --- | --- |
-| `/api/profile` | GET | — | `{ heroTitle, heroSubtitle, featuredWork: {…}, identity: {…} }` |
-| `/api/analyze` | POST | `{ "text": "…" }` | `{ text, pinyin, score, label }` |
-
-- **后端没跑时不会崩**：页面先拿 `data/site.js` 的打底数据渲染，请求失败被 `try/catch` 接住、错误只打到控制台。
-- **需要后端开 CORS**：跨端口（前端 3000 → 后端 8000）要被后端允许才行，这是模块 5.5 课件里后端那一半的内容。
-- 目前 `pinyin` / `score` / `label` 还是后端占位/粗略值，模块 6 换真的。
-
-## 项目结构
+## 📂 项目结构
 
 ```
 zero-to-tech/
-├─ app/                        # 文件夹 = 路由
-│  ├─ layout.jsx               # 全站外壳：<html>/<body> + import 8 个 css + metadata
-│  ├─ page.jsx                 # /            → 渲染 <HomeView />
-│  └─ text-lab/
-│     └─ page.jsx              # /text-lab     → 渲染 <TextLabView />
-├─ components/
-│  ├─ Nav.jsx                  # 顶部品牌 + 导航（<Link> + usePathname 高亮）
-│  ├─ HomeView.jsx             # 首页：site.js 打底 → fetch /api/profile 覆盖
-│  ├─ TextLabView.jsx          # 实验室页：状态提升 result
-│  ├─ InputCard.jsx            # 输入区：POST /api/analyze
-│  ├─ ResultCard.jsx           # 结果区：显示 result（分数数字滚动动画）
-│  ├─ PageHeading.jsx          # 大标题 + 副标题（纯展示，服务端组件）
-│  └─ AnimatedCardGrid.jsx     # 卡片网格 + animejs 错峰入场动画
-├─ css/                        # 8 个样式文件（见下方清单）
-├─ data/site.js                # 网站内容集中地（数据与界面分离）
-├─ .env.local                  # NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-└─ next.config.mjs             # output: "export"（静态导出）
+├── app/                       # Next.js App Router（文件夹 = 路由）
+│   ├── layout.jsx             # 全站外壳：html/body + CSS 引入
+│   ├── page.jsx               # 路由 "/" → 个人主页
+│   └── text-lab/
+│       └── page.jsx           # 路由 "/text-lab" → 文字实验室
+├── components/                # React 组件
+│   ├── HomeView.jsx           # 主页视图（"use client"，拉取 /api/profile）
+│   ├── TextLabView.jsx        # 实验室视图（状态提升：共享 result）
+│   ├── InputCard.jsx          # 输入区：POST /api/analyze
+│   ├── ResultCard.jsx         # 结果区：拼音 + 情感分数动画
+│   ├── Nav.jsx                # 顶部导航（Link + 当前页高亮）
+│   ├── PageHeading.jsx        # 页面标题（服务端组件）
+│   └── AnimatedCardGrid.jsx   # 卡片飞入动画容器
+├── css/                       # 按职责拆分的原生样式
+├── data/
+│   └── site.js                # 站点文案集中地（数据与界面分离）
+├── backend/                   # FastAPI 后端
+│   ├── main.py                # 应用入口 + 三个 API
+│   ├── storage.py             # SQLite 存取（init_db / save_record / get_history）
+│   ├── handmade.py            # 早期「手写 HTTP 服务」版本（教学留存）
+│   ├── requirements.txt
+│   └── history.db             # SQLite 数据文件（运行时生成）
+├── .env.local                 # NEXT_PUBLIC_API_BASE_URL（本地环境变量）
+├── next.config.mjs            # output: "export" 静态导出
+└── package.json
 ```
 
-### 组件边界：谁需要 `"use client"`
+---
 
-Next.js 里组件默认在服务器上渲染（服务端组件）；一旦用到浏览器能力（`useState` / `useEffect` / 事件 / `usePathname`），就要在文件顶部写 `"use client"`：
+## 🔌 API 一览
 
-| 组件 | 用了什么 | 组件类型 |
-| --- | --- | --- |
-| `PageHeading` | 纯展示 | 服务端组件 |
-| `Nav` | `usePathname` | 客户端 |
-| `HomeView` / `TextLabView` | `useState` + `useEffect`（fetch） | 客户端 |
-| `InputCard` / `ResultCard` / `AnimatedCardGrid` | state / animejs | 客户端 |
+### `GET /api/profile`
 
-### 两条数据流（5.5 的核心）
+返回个人主页数据：
 
-1. **首页实时化**：`HomeView` 先用 `site.js` 的 `home` 打底，`useEffect` 里 `GET /api/profile`，成功后 `setData` 覆盖界面。
-2. **状态提升**：`InputCard` 负责发请求、`ResultCard` 负责显示，两个兄弟组件要共享同一份 `result`，就把它提级到共同的父组件 `TextLabView` 里，用 `onResult={setResult}` 传下去。
-
-## 与模块 4.4 的对比（迁移时变了什么）
-
-| 4.4（React / Vite） | 4.5（Next.js） |
-| --- | --- |
-| `index.html` + `src/main.jsx` + `src/App.jsx` | `app/layout.jsx`（全站外壳） |
-| 手搓 `useRoute()` + `navigate()` + 监听 popstate | `app/` 文件夹路由 + `<Link>` + `usePathname` |
-| 页面调 `navigate("/text-lab")` | 页面用 `<Link href="/text-lab">` |
-| 组件没有 `"use client"` 概念 | 涉及浏览器能力的组件要标 `"use client"` |
-| Vite dev server | `next dev`（端口 3000） |
-
-## CSS 体系（8 个文件）
-
-| 文件 | 职责 |
-| --- | --- |
-| `reset.css` | 浏览器默认样式清零 |
-| `variables.css` | 设计变量（颜色 / 间距 / 字体） |
-| `layout.css` | 页面外壳（app-shell / page-shell / page-content） |
-| `hero.css` | 每页顶部 hero 区 |
-| `nav.css` | 顶部导航条 |
-| `cards.css` | 卡片面板（动画入口） |
-| `lab.css` | 文字实验室专属（输入区 / 结果区 / 徽章） |
-| `responsive.css` | 响应式（窄屏适配） |
-
-## 命令速查
-
-```bash
-npm install        # 装依赖
-npm run dev        # 开发模式 → http://localhost:3000
-npm run build      # 构建（output: export → out/）
-npx serve out      # 预览静态产物
+```json
+{
+  "heroTitle": "关于我",
+  "heroSubtitle": "项目，创意，灵感，心得，我的作品",
+  "featuredWork": { "kicker": "作品", "title": "文字实验室", "copy": "拼音和情绪，挖掘中文里的细节", "linkLabel": "打开作品" },
+  "identity": { "motto": "已识乾坤大，尤怜草木青", "learning": "零到全栈" }
+}
 ```
+
+### `POST /api/analyze`
+
+请求体 `{ "text": "要分析的中文" }`，返回：
+
+```json
+{
+  "text": "今天的风很轻",
+  "score": 0.86,
+  "label": "偏积极",
+  "pinyin": "jīn tiān de fēng hěn qīng",
+  "created_at": "2026-09-03T12:00:00+00:00"
+}
+```
+
+> `score` 为 SnowNLP 情感分数（0–1）；`label` 按阈值划分：`≥ 0.6` 偏积极、`≤ 0.4` 偏消极、其余中性。
+
+### `GET /api/history`
+
+返回最近 10 条分析记录（按时间倒序，来自 SQLite）。
+
+---
+
+## 🧠 设计要点（教学主旨）
+
+- **数据与界面分离**：文案集中在 `data/site.js`，改内容不动组件。
+- **文件夹即路由**：App Router 下新增 `app/blog/page.jsx` 即可获得 `/blog`，无需路由配置。
+- **服务端 / 客户端组件**：有交互的组件写 `"use client"`，纯展示组件保持服务端渲染。
+- **状态提升**：`TextLabView` 持有 `result`，`InputCard` 产出、`ResultCard` 消费，兄弟组件共享状态。
+- **容错**：前端请求失败时保留打底数据并输出错误提示，页面不崩溃。
+
+---
+
+## 📚 课程背景
+
+本项目为「零到全栈」AI 时代全栈开发系列课程第 4–5 模块的随堂作品，从模块 4.4 的单页应用一路演进而来（`backend/handmade.py` 保留了早期手写 HTTP 服务的版本，可对照理解框架做了什么）。
+
+---
+
+## 📄 License
+
+MIT — 自由学习、修改与分发。
