@@ -25,3 +25,4 @@ backend/__pycache__/
 backend/*.py[cod]
 
 backend/*.db
+.codewhale
